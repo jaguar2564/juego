@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuerca y el Rescate de M michi</title>
+    <style>
+        /* Estilos generales para centrar el canvas y dar atmósfera espacial */
+        body {
+            background-color: #0d0d1a;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Contenedor que agrupa el Canvas y las pantallas flotantes */
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 450px;
+            border: 4px solid #333;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+        }
+
+        canvas {
+            display: block;
+            background-color: #03030c;
+        }
+
+        /* Estilo base oculto para los menús superpuestos */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 10, 25, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden; /* evita que los botones ocultos sean enfocables con el teclado */
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 10;
+        }
+
+        /* Clase activa controlada por JS para mostrar menús */
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+        }
+
+        h1 {
+            color: #00f0ff;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        p {
+            max-width: 500px;
+            line-height: 1.5;
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        /* Botones de acción con estética retrofuturista */
+        button {
+            background-color: #111;
+            color: #00f0ff;
+            border: 2px solid #00f0ff;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #00f0ff;
+            color: #111;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+        }
+
+        /* Personalización de colores para la pantalla de Game Over */
+        #gameover-screen h2 {
+            color: #ff3333;
+            text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+        }
+        #gameover-screen button {
+            color: #ff3333;
+            border-color: #ff3333;
+        }
+        #gameover-screen button:hover {
+            background-color: #ff3333;
+            color: #111;
+        }
+
+        /* Personalización de colores para la pantalla de Victoria */
+        #win-screen h2 {
+            color: #2ecc71;
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+        #win-screen button {
+            color: #2ecc71;
+            border-color: #2ecc71;
+        }
+        #win-screen button:hover {
+            background-color: #2ecc71;
+            color: #111;
+        }
+
+        /* Pantalla de Pausa */
+        #pause-screen h2 {
+            color: #f1c40f;
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+        }
+        #pause-screen button {
+            color: #f1c40f;
+            border-color: #f1c40f;
+        }
+        #pause-screen button:hover {
+            background-color: #f1c40f;
+            color: #111;
+        }
+
+        /* Permite saltos de línea en los textos del puntaje */
+        #win-text, #gameover-text {
+            white-space: pre-line;
+        }
+
+        #record-text {
+            color: #f1c40f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Canvas donde el motor de JS dibuja el juego -->
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+
+        <!-- Pantalla de Inicio (Inicia visible gracias a la clase active) -->
+        <div id="start-screen" class="screen active">
+            <h1>Tuerca y el Rescate de M michi</h1>
+            <h2>Misión: Rescate Espacial</h2>
+            <p>
+                El robot <strong>Tuerca</strong> debe infiltrarse a lo largo de los sectores de la estación. 
+                Esquivá los obstáculos flotantes, recolectá baterías para recuperar energía y juntá 
+                <strong>3 snacks obligatorios</strong> antes de llegar al sector final para convencer a 
+                <strong>M michi</strong> de salir de su caja de cartón.
+            </p>
+            <p><strong>Controles:</strong> Flechas del teclado o W, A, S, D para moverte.<br>
+            <strong>P</strong> o <strong>Esc</strong>: pausa &nbsp;·&nbsp; <strong>M</strong>: silenciar</p>
+            <p id="record-text"></p>
+            <button id="start-btn">Iniciar Misión</button>
+        </div>
+
+        <!-- Pantalla de Game Over (Oculta por defecto) -->
+        <div id="gameover-screen" class="screen">
+            <h2>SISTEMA FUERA DE LÍNEA</h2>
+            <p id="gameover-text">Misión fallida. El robot se quedó sin energía.</p>
+            <button id="restart-btn">Reparar y Reintentar</button>
+        </div>
+
+        <!-- Pantalla de Pausa (Oculta por defecto) -->
+        <div id="pause-screen" class="screen">
+            <h2>PAUSA</h2>
+            <p>Presioná P o Esc para continuar.</p>
+            <button id="resume-btn">Continuar</button>
+        </div>
+
+        <!-- Pantalla de Victoria / Cambio de nivel (Oculta por defecto) -->
+        <div id="win-screen" class="screen">
+            <h2>SECTOR ASEGURADO</h2>
+            <p id="win-text">Avanzando rápido al siguiente sector de la estación.</p>
+            <button id="next-btn">Siguiente Sector</button>
+        </div>
+    </div>
+
+    <!-- Enlace obligatorio al script de JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
